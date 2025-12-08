@@ -1,6 +1,7 @@
-import DeliveryController from './controllers/DeliveryController';
-import DeliveryView from './views/DeliveryView';
-import { drawMapStatic } from './utils/CanvasUtils';
+// app.js
+import DeliveryController from './controllers/DeliveryController.js';
+import DeliveryView from './views/DeliveryView.js';
+import { drawMapStatic } from './utils/CanvasUtils.js';
 
 // Instancia os módulos necessários
 const view = new DeliveryView();
@@ -28,11 +29,19 @@ function populateBairros() {
     controller.populateBairros(elements.bairroSelect);
 }
 
+// Liga o change do bairro para carregar as ruas
+function setupBairroListener() {
+    elements.bairroSelect.addEventListener('change', () => {
+        controller.handleBairroChange(elements.bairroSelect, elements.ruaSelect);
+    });
+}
+
 // Ajuste do tamanho do canvas
 function resizeCanvas() {
     const parentWidth = elements.canvas.parentElement.offsetWidth;
     elements.canvas.width = parentWidth;
     elements.canvas.height = Math.round(parentWidth * (650 / 700));
+    // desenha o mapa com rota vazia inicialmente
     drawMapStatic({ rotaNodes: [], pathNames: [], totalDistance: 0.0, nodeToClientMap: new Map() });
 }
 
@@ -64,7 +73,8 @@ elements.deliverBtn.addEventListener('click', async () => {
     const result = await controller.entregarProxima();
     if (result) {
         view.displayMessage(`🍕 ENTREGUE! Pedido #${result.key} para ${result.value.cliente} em ${result.value.rua}.`, 'success');
-        view.renderRoute(controller.getOptimalRoute());
+        const rota = controller.getOptimalRoute();
+        view.renderRoute(rota);
     } else {
         view.displayMessage("📦 Nenhuma entrega pendente para realizar.", 'error');
     }
@@ -84,6 +94,7 @@ elements.showRouteBtn.addEventListener('click', async () => {
 // Inicializa o app
 window.onload = () => {
     populateBairros();
+    setupBairroListener();
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 };
