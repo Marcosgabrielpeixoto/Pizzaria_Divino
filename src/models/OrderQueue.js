@@ -1,6 +1,7 @@
-class OrderQueue {
+// models/OrderQueue.js
+export default class OrderQueue {
     constructor() {
-        this.items = []; 
+        this.items = []; // { key, value }
     }
 
     insert(key, value) {
@@ -16,6 +17,3 @@ class OrderQueue {
         return this.items;
     }
 }
-
-export default OrderQueue;
-
