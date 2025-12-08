@@ -1,12 +1,12 @@
-import DeliveryService from '../services/DeliveryService';
+// controllers/DeliveryController.js
+import DeliveryService from '../services/DeliveryService.js';
 
-class DeliveryController {
+export default class DeliveryController {
     constructor(view) {
         this.view = view;
         this.service = new DeliveryService();
     }
 
-    // Preenche o dropdown de bairros
     populateBairros(bairroSelectElement) {
         const bairros = this.service.getAvailableBairros();
         bairros.forEach(b => {
@@ -17,25 +17,51 @@ class DeliveryController {
         });
     }
 
-    // Processa nova entrega
-    async processNewDelivery(cliente, bairro, rua) {
-        try {
-            const { pedido, rota } = await this.service.novaEntrega(cliente, bairro, rua);
-            return { success: true, message: `Entrega #${pedido.seq} para ${pedido.cliente} adicionada!`, rota };
-        } catch (error) {
-            return { success: false, message: `Erro: ${error.message}` };
+    handleBairroChange(bairroSelectElement, ruaSelectElement) {
+        const bairro = bairroSelectElement.value;
+        const ruas = this.service.getRuasDoBairro(bairro);
+
+        ruaSelectElement.innerHTML = '<option value="" disabled selected>Selecione a Rua</option>';
+        ruaSelectElement.disabled = ruas.length === 0;
+
+        ruas.forEach(r => {
+            const option = document.createElement('option');
+            option.value = r;
+            option.textContent = r;
+            ruaSelectElement.appendChild(option);
+        });
+
+        if (ruas.length > 0) {
+            ruaSelectElement.focus();
         }
     }
 
-    // Entrega o próximo pedido
-    async entregarProxima() {
-        return await this.service.entregarProxima();
+    async processNewDelivery(cliente, bairro, rua) {
+        try {
+            const { pedido, rota } = this.service.novaEntrega(cliente, bairro, rua);
+            const pending = this.service.getPendingOrders();
+            this.view.renderPendingOrders(pending);
+            return {
+                success: true,
+                message: `✅ Entrega #${pedido.seq} para ${pedido.cliente} adicionada! Rota Recalculada.`,
+                rota
+            };
+        } catch (error) {
+            return {
+                success: false,
+                message: `❌ Erro: ${error.message}`
+            };
+        }
     }
 
-    // Obtém a rota ótima
+    async entregarProxima() {
+        const result = this.service.entregarProxima();
+        const pending = this.service.getPendingOrders();
+        this.view.renderPendingOrders(pending);
+        return result;
+    }
+
     getOptimalRoute() {
         return this.service.rotaOtima();
     }
 }
-
-export default DeliveryController;
